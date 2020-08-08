@@ -1,0 +1,62 @@
+#! /bin/bash
+
+# film roulette parcer v1.0
+
+# creating directories for tempirary files
+
+rm -r ~/bin/filmroulette/tmp
+mkdir -p ~/bin/filmroulette/tmp
+cd ~/bin/filmroulette/tmp
+
+start_time=$(date)
+
+# loop for parcing list page
+
+while true; do
+	wget "https://rutracker.org/forum/viewforum.php?f=313&start=$pages"
+	if [ -e view* ]; then
+		cat viewforum* | grep -a "viewtopic.php?t" | cut -d" " -f5 | grep view | sed -r 's/^[^[0-9]+//' | sed -r 's/.$//' >> ../page_id.txt
+		rm view*
+		pages=$((pages+50))
+		clear
+		echo "$( cat ../page_id.txt | wc -l ) film link parced"
+		echo "Start time is: $start_time"
+		echo "Now is       : $(date)"
+		echo " " 
+	else 
+		break
+	fi
+done
+
+film_c=$( cat ../page_id.txt | wc -l )
+echo "$film_c film link parced"
+echo "Starting to parce magnet-links"
+sleep 1
+
+# loop for parcing magtet-links
+i=0
+
+until ((i == $film_c));do
+	film_id=$(cat ../page_id.txt | awk NR==$i)
+	wget "https://rutracker.org/forum/viewtopic.php?t=$film_id"
+	if [ -e view* ]; then
+		echo -n $(cat viewtopic* | grep magnet: | sed -r 's/^[^"]*//'| cut -d" " -f1) >> ../db.txt
+		echo -n ";" >> ../db.txt
+		echo -n "$(iconv -f cp1251 view* | grep Жанр | sed -r 's/Жанр/?/' |sed -r 's/^[^?]+//' | sed -r 's/^[^[A-Я]+//' | awk NR==1 | sed -r 's/</?/' | sed -r 's/[^?]*$//' | sed -r 's/[^[A-Я]*$//')" >> ../db.txt
+		echo -n ";" >> ../db.txt
+		echo -n $(iconv -f cp1251 view* | grep -iE "Год выпуска" | sed 's/Год выпуска/?/' | sed -r 's/^[^?]+//' | sed -r 's/^[^[0-9]+//' | sed -r 's/</?/' | sed -r 's/[^?]*$//' | sed -r 's/[^[0-9]*$//' | awk NR==1) >> ../db.txt
+		echo ";" >> ../db.txt
+		rm viewtopic*
+		((++i))
+		clear
+		echo "$i magnet-links parced from $film_c links"
+		echo "Start time is: $start_time"
+		echo "Now is       : $(date)"
+		perc=$(((i*100)/film_c))
+		progress_bar -s $perc
+		echo " "
+	else
+		((++i))
+		continue
+	fi
+done

@@ -1,0 +1,67 @@
+#! /bin/bash
+
+# main script for filmroulette
+
+FILM_COUNT=$(wc -l ~/bin/filmroulette/db.txt | cut -d" " -f1)
+
+# main function to find and play
+
+play () {
+	echo $FILM_COUNT
+	rand_n=$(shuf -i 1-$FILM_COUNT -n 1)
+	cat db.txt $1 $2 | awk NR==$rand_n | cut -d";" -f1 | xargs peerflix -k
+}
+
+i=0
+
+help () {
+	echo "
+FILMROULETTE is a peerflix wrap, that lounches random film from a pre-parsed list of RuTracker films. Current amount of films is $FILM_COUNT
+To parse films run filmrlt-parser
+
+USAGE:
+
+$(basename $0) [OPTIONS...]
+
+OPTIONS:
+
+	-g [GENRE...]
+
+Selects genre of film
+
+Usable genres:
+
+	-y [YEAR] or [FROM YEAR-TO YEAR]
+
+Select film of some year, or in area of years"
+exit 1
+}
+i=o
+while [[ -n $1 ]];do
+	case $1 in
+		-g) 	shift
+			while [[ -n $1 ]];do
+				case $1 in
+					-y) shift
+						YEAR=$1
+					break
+						;;
+					*)GENRE[i]=$1
+					   ((++i))
+					   shift
+					   ;;
+			   esac
+		   done
+		   ;;
+	   -y) shift
+		  YEAR=$1
+		 ;;
+	 -h) help
+		 ;;
+ esac
+ shift
+done
+i=0
+
+for i in ${GENRE[@]}; do echo $i; done
+echo ${#GENRE[@]}
