@@ -1,0 +1,84 @@
+#! /bin/bash
+
+# function for printing progress bar
+
+prog_bar () {
+	if (( i <= 100 )); then
+		echo -n '['
+		until (( i == $1 )); do
+			echo -n "|"
+			((++i))
+		done
+		i=0
+		until (( i == $((100-$1)) )); do
+			echo -n "."
+			((++i))
+		done
+		echo "] ${1}%"
+	fi
+}
+
+# function for printing smaller progress bar
+
+prog_bar_s () {
+	perc=$1
+	if (( $(($1%2)) == 1 )); then
+		perc=$(($1-1))
+	fi
+	if (( i <= 100 )); then
+		echo -n '['
+		until (( i == $perc )); do
+			echo -n "|"
+			i=$((i+2))
+		done
+		i=0
+		until (( i == $((100-$perc)) )); do
+			echo -n "."
+			i=$((i+2))
+		done
+		echo "] ${1}%"
+	fi
+}
+
+# usage explanation
+
+usage () {
+	echo "
+Usage:
+
+$(basename $0) [OPTION]... PERCENT
+
+Description:
+
+-s
+	print smaller progressbar
+
+-h, --help
+	show this message
+
+Where PERCENT may be in range [0..100]
+	" >&2
+
+}
+# filters
+
+case $1 in
+	[0-9]|[1-9][0-9]|100) prog_bar $1
+		;;
+	-s) 
+		case $2 in
+		      	[0-9]|[1-9][0-9]|100) prog_bar_s $2
+				;;
+			*)
+				echo "Wrong input" >&2       
+				usage
+				;;
+		esac
+		;;
+	*|-h|--help) usage
+		;;
+esac
+
+
+
+
